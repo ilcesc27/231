@@ -19,8 +19,8 @@ for _, row in df.iterrows():
         st.markdown(f"**Famiglia:** {row['Famiglia']}")
         st.markdown(f"**Stato:** {row['Stato']} | **Ultimo aggiornamento:** {row['Ultimo aggiornamento']}")
         st.markdown("---")
-        st.markdown(f"### 📝 Testo integrale del reato
-{row['Testo']}")
+        st.markdown("### 📝 Testo integrale del reato")
+        st.markdown(row['Testo'])
         st.markdown("### 💰 Sanzioni")
         st.markdown(f"- **Pecuniaria:** {row['Sanzione Pecuniaria']}")
         st.markdown(f"- **Interdittiva:** {row['Sanzione Interdittiva']}")
