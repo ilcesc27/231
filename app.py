@@ -57,13 +57,13 @@ elif page == "🧩 Esplora reati":
     else:
         for _, row in subset.iterrows():
             with st.expander(f"{row['Art. Cod. Penale']} – {row['Reato']}"):
-                st.markdown(f"📄 **Testo vigente:**
-{row['Testo']}")
-                st.markdown(f"💰 **Sanzioni**:
-- Pecuniaria: {row['Sanzione Pecuniaria']}
-- Interdittiva: {row['Sanzione Interdittiva']}")
-                st.markdown(f"📜 **Modifiche storiche:**
-{row['Modifiche storiche']}")
+                st.markdown("📄 **Testo vigente:**")
+                st.markdown(row["Testo"])
+                st.markdown("💰 **Sanzioni:**")
+                st.markdown(f"- Pecuniaria: {row['Sanzione Pecuniaria']}")
+                st.markdown(f"- Interdittiva: {row['Sanzione Interdittiva']}")
+                st.markdown("📜 **Modifiche normative storiche:**")
+                st.markdown(row["Modifiche storiche"])
 
 elif page == "📜 Modifiche storiche art. 316-bis":
     st.subheader("📜 Storico normativo – Art. 316-bis c.p.")
