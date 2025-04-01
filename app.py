@@ -1,6 +1,6 @@
-
 import streamlit as st
 import pandas as pd
+import difflib
 
 st.set_page_config(page_title="231 Navigator", layout="centered")
 
@@ -67,18 +67,15 @@ elif page == "🧩 Esplora reati":
 
 elif page == "📜 Modifiche storiche art. 316-bis":
     st.subheader("📜 Storico normativo – Art. 316-bis c.p.")
+    versione_attuale = df_storico[df_storico["Modifica"] == "Versione attuale"].iloc[0]["Testo"]
 
-    versione_attuale = df_storico.iloc[-1]["Testo"]
     for _, row in df_storico.iterrows():
         if row["Modifica"] == "Versione attuale":
             continue
         with st.expander(f"{row['Modifica']} ({row['Data']})"):
-            st.markdown(f"**Testo di allora:**
-
-{row['Testo']}")
-            diff = st.toggle("🔍 Mostra confronto con versione attuale")
-            if diff:
-                import difflib
+            st.markdown("**Testo di allora:**")
+            st.markdown(row["Testo"])
+            if st.toggle("🔍 Mostra confronto con versione attuale", key=row["Data"]):
                 differenze = difflib.unified_diff(
                     row["Testo"].split(),
                     versione_attuale.split(),
