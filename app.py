@@ -2,38 +2,40 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Catalogo Reati 231 - PA", layout="wide")
+st.set_page_config(page_title="Catalogo Reati 231 - Art. 24 e 25", layout="wide")
 
-st.title("📘 Catalogo Reati 231 - Rapporti con la Pubblica Amministrazione")
-st.markdown("Consulta i reati presupposto rilevanti ai sensi degli articoli 24 e 25 del D.Lgs. 231/2001. I dati sono aggiornati e collegati a Normattiva.")
+st.title("📘 Catalogo Reati 231 - Art. 24 e 25")
+st.markdown("Visualizza e filtra tutti i reati presupposto connessi agli articoli 24 e 25 del D.Lgs. 231/2001. Dati aggiornati con stato normativo, modifiche recenti e note OdV.")
 
-# Caricamento dati da entrambi i fogli
-excel_file = "Catalogo_231_PA_Art24_25.xlsx"
-df_art24 = pd.read_excel(excel_file, sheet_name="Reati Art. 24")
-df_art25 = pd.read_excel(excel_file, sheet_name="Reati Art. 25")
-df_testi = pd.read_excel(excel_file, sheet_name="Testi Articoli")
+# Caricamento dati
+df = pd.read_excel("catalogo_completo_231_art24_25_COMPLETO.xlsx")
 
-# Tabs per articoli
-tab1, tab2 = st.tabs(["🧾 Articolo 24", "⚖️ Articolo 25"])
+# Sidebar con filtri
+with st.sidebar:
+    st.header("🔍 Filtra i reati")
+    articoli_231 = st.multiselect("Articolo 231", options=sorted(df["Articolo 231"].unique()), default=list(df["Articolo 231"].unique()))
+    stato = st.multiselect("Stato", options=sorted(df["Stato"].unique()), default=list(df["Stato"].unique()))
+    parola_chiave = st.text_input("Parola chiave nel reato", "")
 
-with tab1:
-    st.subheader("📄 Testo dell'articolo 24")
-    st.markdown(df_testi[df_testi["Articolo"] == "Art. 24"]["Testo"].values[0])
+# Filtro dati
+filtered_df = df[
+    df["Articolo 231"].isin(articoli_231) &
+    df["Stato"].isin(stato) &
+    df["Reato"].str.contains(parola_chiave, case=False, na=False)
+]
 
-    st.subheader("📌 Reati previsti dall'art. 24")
-    st.dataframe(df_art24)
+# Visualizzazione tabella
+st.subheader(f"📋 Reati trovati: {len(filtered_df)}")
+st.dataframe(filtered_df, use_container_width=True)
 
-    st.markdown("### 🔗 Link diretti alle norme:")
-    for _, row in df_art24.iterrows():
-        st.markdown(f"- [{row['Reato']} – {row['Articolo']}]({row['Link Normattiva']})")
+# Riepilogo stato
+st.markdown("### 📌 Stato normativo")
+st.write(filtered_df["Stato"].value_counts())
 
-with tab2:
-    st.subheader("📄 Testo dell'articolo 25")
-    st.markdown(df_testi[df_testi["Articolo"] == "Art. 25"]["Testo"].values[0])
+# Download del file filtrato
+st.download_button("⬇️ Scarica tabella filtrata in Excel", data=filtered_df.to_excel(index=False), file_name="reati_filtrati_231.xlsx")
 
-    st.subheader("📌 Reati previsti dall'art. 25")
-    st.dataframe(df_art25)
-
-    st.markdown("### 🔗 Link diretti alle norme:")
-    for _, row in df_art25.iterrows():
-        st.markdown(f"- [{row['Reato']} – {row['Articolo']}]({row['Link Normattiva']})")
+# Dettagli singoli reati
+st.markdown("### 🔗 Dettagli e fonti")
+for _, row in filtered_df.iterrows():
+    st.markdown(f"**{row['Reato']}** – [{row['Articolo c.p.']}]({row['Fonte Normattiva']})")
