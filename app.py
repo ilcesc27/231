@@ -1,76 +1,67 @@
-
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Catalogo Reati 231", layout="wide")
+st.set_page_config(page_title="Reati 231 – Art. 24 & 25", layout="wide")
 
 @st.cache_data
 def load_data():
-    return pd.read_excel("catalogo_completo_231_art24_25_COMPLETO.xlsx")
+    return pd.read_excel("catalogo_reati_231_art24_25_mappato.xlsx")
 
 df = load_data()
 
 st.markdown("""<style>
-    .card {
-        background-color: #1e1e1e;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        border-left: 5px solid #FF4B4B;
-    }
-    .badge {
-        display: inline-block;
-        background-color: #2a2a2a;
-        padding: 2px 10px;
-        border-radius: 20px;
-        margin-right: 8px;
-        font-size: 0.85em;
-    }
+.card {
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    border-left: 5px solid #FF4B4B;
+}
+.badge {
+    display: inline-block;
+    background-color: #444;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin: 4px 4px 4px 0;
+    font-size: 0.85em;
+}
 </style>""", unsafe_allow_html=True)
 
-st.title("📱 Reati 231 – Art. 24 & 25")
-st.markdown("Un’interfaccia elegante, pensata per la compliance moderna. Pulita, chiara, fluida. In stile iPhone 📱.")
+st.title("📱 Reati 231 – Art. 24 & 25 (Versione Avanzata)")
+st.markdown("Consulta il testo coordinato aggiornato dei reati presupposto in formato smart, completo di sanzioni e struttura per la compliance OdV.")
 
-tab1, tab2 = st.tabs(["📚 Reati", "📊 Statistiche"])
+tab1, tab2 = st.tabs(["📚 Catalogo reati", "📊 Statistiche"])
 
-# --- TAB 1 ---
 with tab1:
-    articoli_231 = st.multiselect("📂 Famiglia 231", options=df["Articolo 231"].unique(), default=list(df["Articolo 231"].unique()), key="famiglia")
-    stato = st.multiselect("🛑 Stato", options=df["Stato"].unique(), default=list(df["Stato"].unique()), key="stato")
-    cerca = st.text_input("🔎 Cerca reato...", "", key="search")
+    famiglie = st.multiselect("🧩 Filtra per Famiglia", options=df["Famiglia"].unique(), default=list(df["Famiglia"].unique()))
+    stato = st.multiselect("🛑 Stato", options=df["Stato"].unique(), default=list(df["Stato"].unique()))
+    cerca = st.text_input("🔎 Cerca nel reato o testo coordinato...", "")
 
     filtered = df[
-        df["Articolo 231"].isin(articoli_231) &
+        df["Famiglia"].isin(famiglie) &
         df["Stato"].isin(stato) &
-        df["Reato"].str.contains(cerca, case=False, na=False)
+        (df["Reato (rubrica)"].str.contains(cerca, case=False, na=False) |
+         df["Testo coordinato"].str.contains(cerca, case=False, na=False))
     ]
 
-    st.markdown(f"🧠 **{len(filtered)} reati trovati**")
+    st.markdown(f"🔎 **{len(filtered)} reati trovati**")
 
-    for art in sorted(filtered["Articolo 231"].unique()):
-        st.markdown(f"## 🧩 {art}")
-        famiglia_df = filtered[filtered["Articolo 231"] == art]
-        for _, row in famiglia_df.iterrows():
-            stato_badge = "🟢 Vigente" if row["Stato"] == "Vigente" else "🔴 Abrogato"
-            st.markdown(f'''
-            <div class="card">
-                <div><b>{row['Articolo 231']} – {row['Articolo c.p.']} c.p.</b></div>
-                <div style="margin-top: 6px;">📝 <i>{row['Reato']}</i></div>
-                <div style="margin-top: 6px;">
-                    <span class="badge">{stato_badge}</span>
-                    <span class="badge">📅 {row['Ultimo aggiornamento']}</span>
-                </div>
-                <div style="margin-top: 8px;">🔗 <a href="{row['Fonte Normattiva']}" target="_blank">Vai a Normattiva</a></div>
-            </div>
-            ''', unsafe_allow_html=True)
+    for _, row in filtered.iterrows():
+        st.markdown(f'''
+        <div class="card">
+            <b>{row['Art. 231']} – {row['Art. Cod. Penale']} c.p. – {row['Reato (rubrica)']}</b><br><br>
+            <span class="badge">{row['Stato']}</span>
+            <span class="badge">📅 {row['Ultimo aggiornamento']}</span>
+            <span class="badge">📁 {row['Famiglia']}</span><br><br>
+            <div style="font-size: 0.95em; line-height: 1.5;">{row['Testo coordinato']}</div><br>
+            <b>💰 Sanzione Pecuniaria:</b> {row['Sanz. pec.']}<br>
+            <b>🚫 Sanzione Interdittiva:</b> {row['Sanz. interd.']}
+        </div>
+        ''', unsafe_allow_html=True)
 
-# --- TAB 2 ---
 with tab2:
-    st.subheader("📊 Statistiche generali")
-    v = df[df["Stato"] == "Vigente"].shape[0]
-    a = df[df["Stato"] == "Abrogato"].shape[0]
-    aggiornati = df[df["Ultimo aggiornamento"] >= "2022-01-01"].shape[0]
-    st.metric("✅ Reati vigenti", v)
-    st.metric("❌ Reati abrogati", a)
-    st.metric("🧾 Aggiornati dal 2022", aggiornati)
+    st.subheader("📊 Statistiche complessive")
+    st.metric("✅ Reati vigenti", df[df["Stato"] == "Vigente"].shape[0])
+    st.metric("❌ Reati abrogati", df[df["Stato"] == "Abrogato"].shape[0])
+    st.metric("🧾 Totale reati catalogati", df.shape[0])
