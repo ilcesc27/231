@@ -1,41 +1,62 @@
-
-import streamlit as st
+mport streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Catalogo Reati 231 - Art. 24 e 25", layout="wide")
-
-st.title("📘 Catalogo Reati 231 - Art. 24 e 25")
-st.markdown("Visualizza e filtra tutti i reati presupposto connessi agli articoli 24 e 25 del D.Lgs. 231/2001. Dati aggiornati con stato normativo, modifiche recenti e note OdV.")
+st.set_page_config(page_title="Catalogo Reati 231", layout="wide")
 
 # Caricamento dati
-df = pd.read_excel("catalogo_completo_231_art24_25_COMPLETO.xlsx")
+@st.cache_data
+def load_data():
+    return pd.read_excel("catalogo_completo_231_art24_25_COMPLETO.xlsx")
 
-# Sidebar con filtri
-with st.sidebar:
-    st.header("🔍 Filtra i reati")
-    articoli_231 = st.multiselect("Articolo 231", options=sorted(df["Articolo 231"].unique()), default=list(df["Articolo 231"].unique()))
-    stato = st.multiselect("Stato", options=sorted(df["Stato"].unique()), default=list(df["Stato"].unique()))
-    parola_chiave = st.text_input("Parola chiave nel reato", "")
+df = load_data()
 
-# Filtro dati
-filtered_df = df[
-    df["Articolo 231"].isin(articoli_231) &
-    df["Stato"].isin(stato) &
-    df["Reato"].str.contains(parola_chiave, case=False, na=False)
-]
+# Titolo e introduzione
+st.title("📘 Catalogo Reati 231 – Art. 24 & 25")
+st.markdown(
+    "Una piattaforma smart per esplorare, filtrare e gestire i reati presupposto del D.Lgs. 231/2001. "
+    "Versione aggiornata con stato normativo, modifiche recenti, e spazio note OdV."
+)
 
-# Visualizzazione tabella
-st.subheader(f"📋 Reati trovati: {len(filtered_df)}")
-st.dataframe(filtered_df, use_container_width=True)
+# Tabs principali
+tab1, tab2, tab3 = st.tabs(["📚 Reati Presupposto", "📌 Aggiornamenti Normativi", "🧠 Storico + Note"])
 
-# Riepilogo stato
-st.markdown("### 📌 Stato normativo")
-st.write(filtered_df["Stato"].value_counts())
+# --- TAB 1: Catalogo Reati ---
+with tab1:
+    st.subheader("📋 Filtra e consulta i reati ex Art. 24 e 25")
 
-# Download del file filtrato
-st.download_button("⬇️ Scarica tabella filtrata in Excel", data=filtered_df.to_excel(index=False), file_name="reati_filtrati_231.xlsx")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        articoli_231 = st.multiselect("Articolo 231", options=df["Articolo 231"].unique(), default=list(df["Articolo 231"].unique()))
+    with col2:
+        stato = st.multiselect("Stato", options=df["Stato"].unique(), default=list(df["Stato"].unique()))
+    with col3:
+        parola = st.text_input("🔎 Cerca nel reato", "")
 
-# Dettagli singoli reati
-st.markdown("### 🔗 Dettagli e fonti")
-for _, row in filtered_df.iterrows():
-    st.markdown(f"**{row['Reato']}** – [{row['Articolo c.p.']}]({row['Fonte Normattiva']})")
+    filtered_df = df[
+        df["Articolo 231"].isin(articoli_231) &
+        df["Stato"].isin(stato) &
+        df["Reato"].str.contains(parola, case=False, na=False)
+    ]
+
+    st.success(f"💡 {len(filtered_df)} reati trovati")
+
+    for _, row in filtered_df.iterrows():
+        with st.expander(f"🔹 {row['Articolo 231']} – {row['Reato']}"):
+            st.markdown(f"**Articolo c.p.:** {row['Articolo c.p.']}")
+            st.markdown(f"**Stato:** {'🟢 Vigente' if row['Stato'] == 'Vigente' else '🔴 Abrogato'}")
+            st.markdown(f"**Ultimo aggiornamento:** {row['Ultimo aggiornamento']}")
+            st.markdown(f"**Modifica recente:** {row['Modifica recente']}")
+            st.markdown(f"**Fonte:** [Vai a Normattiva]({row['Fonte Normattiva']})")
+            st.text_area("📝 Note OdV", row["Note OdV"], key=row['Articolo c.p.'])
+
+# --- TAB 2: Aggiornamenti Normativi ---
+with tab2:
+    st.subheader("🗓️ Reati modificati negli ultimi anni")
+    df_recent = df[df["Modifica recente"].notnull()]
+    df_recent = df_recent[df_recent["Ultimo aggiornamento"] >= "2019-01-01"]
+    st.dataframe(df_recent, use_container_width=True)
+    st.download_button("⬇️ Scarica aggiornamenti", df_recent.to_excel(index=False), file_name="aggiornamenti_reati_231.xlsx")
+
+# --- TAB 3: Storico e Note OdV ---
+with tab3:
+    st.subheader("📑 Storico, stato e annotazioni")
