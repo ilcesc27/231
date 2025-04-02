@@ -1,69 +1,85 @@
 
 import streamlit as st
 import pandas as pd
+from fpdf import FPDF
 
-st.set_page_config(page_title="231 Navigator", layout="centered")
+st.set_page_config(page_title="231 Navigator", layout="wide")
 
-# SELEZIONE PAGINA
-page = st.radio("Scegli cosa esplorare", [
-    "🏠 Home",
-    "🧩 Esplora reati",
-    "📜 Modifiche storiche art. 316-bis",
-    "🍏 Reato Apple-style"
-], horizontal=True)
+@st.cache_data
+def load_data():
+    df_316 = pd.DataFrame({
+        "Famiglia": ["A. REATI CONTRO LA PUBBLICA AMMINISTRAZIONE"],
+        "Articolo 231": ["Art. 24 D.Lgs. 231/2001"],
+        "Art. Cod. Penale": ["Art. 316-bis c.p."],
+        "Reato": ["Malversazione di erogazioni pubbliche"],
+        "Testo": ["Chiunque, estraneo alla pubblica Amministrazione, avendo ottenuto dallo Stato o da altro ente pubblico..."],
+        "Sanzione Pecuniaria": ["da 100 a 500 quote"],
+        "Sanzione Interdittiva": ["divieto di contrattare con la PA; esclusione da agevolazioni; ecc."],
+        "Modifiche storiche": ["L. 86/1990, L. 181/1992, L. 3/2019, D.Lgs 75/2020, L. 137/2023"],
+        "Esempi applicativi": ["Utilizzo illecito di fondi pubblici per fini privati"],
+        "Spiegazione semplificata": ["Usare fondi pubblici per fini diversi da quelli autorizzati"]
+    })
+    df_615 = pd.read_excel("reato_24bis_accesso_abusivo.xlsx")
+    return pd.concat([df_316, df_615], ignore_index=True)
 
-# === HOME ===
-if page == "🏠 Home":
-    st.title("📘 231 Navigator")
-    st.markdown("Benvenuto in una nuova esperienza di compliance. Scopri, esplora e resta aggiornato sul D.Lgs. 231/2001 in stile Apple.")
-    st.markdown("### Cosa puoi fare:")
-    st.markdown("- 🧩 Naviga le famiglie di reato")
-    st.markdown("- 📜 Consulta le modifiche normative")
-    st.markdown("- 📑 Prepara verbali e documentazione OdV")
+df = load_data()
 
-# === DEMO APPLE-STYLE CON ESPORTAZIONE ===
-elif page == "🍏 Reato Apple-style":
-    st.markdown("<h1 style='font-size: 36px;'>Art. 316-bis c.p. – Malversazione di erogazioni pubbliche</h1>", unsafe_allow_html=True)
+st.sidebar.title("🔍 Filtri")
+query = st.sidebar.text_input("Cerca reato o articolo...").lower()
+famiglie = st.sidebar.multiselect("Filtra per famiglia", df["Famiglia"].unique(), default=list(df["Famiglia"].unique()))
+modifiche = st.sidebar.text_input("Filtra per anno o legge (es. 2020, 2024, L. 3/2019)").lower()
 
-    # Testo in corsivo
-    testo_reato = """
-Chiunque, estraneo alla pubblica Amministrazione, avendo ottenuto dallo Stato o da altro ente pubblico o dalle Comunità europee contributi, finanziamenti, mutui agevolati o altre erogazioni dello stesso tipo, comunque denominate, destinati alla realizzazione di una o più finalità, non li destina alle finalità previste, è punito con la reclusione da sei mesi a quattro anni.
-"""
-    st.markdown("📄 **Testo vigente:**")
-    st.markdown(f"<div style='font-style: italic; font-size: 18px; line-height: 1.6; color: #333;'>{testo_reato}</div>", unsafe_allow_html=True)
+# Applica i filtri
+df_filtered = df[df["Famiglia"].isin(famiglie)]
+if query:
+    df_filtered = df_filtered[df_filtered["Reato"].str.lower().str.contains(query) | df_filtered["Art. Cod. Penale"].str.lower().str.contains(query)]
+if modifiche:
+    df_filtered = df_filtered[df_filtered["Modifiche storiche"].str.lower().str.contains(modifiche)]
 
-    st.markdown("💰 **Sanzioni:**")
-    st.markdown("- Pecuniaria: da 100 a 500 quote; nei casi di rilevante profitto o danni di particolare gravità da 200 a 600 quote.")
-    st.markdown("- Interdittiva: divieto di contrattare con la pubblica amministrazione; esclusione da agevolazioni, finanziamenti, contributi o sussidi ed eventuale revoca di quelli già concessi; divieto di pubblicizzare beni e servizi; da tre mesi a due anni.")
+st.title("📘 231 Navigator")
+st.markdown("Consulta reati presupposto, modifiche normative, sanzioni e versioni storiche. Ora con esportazione PDF!")
 
-    st.markdown("📜 **Modifiche normative storiche:**")
-    modifiche = [
-        ("L. 86/1990", "Introdotto con "),
-        ("L. 181/1992", "Modificato da "),
-        ("L. 3/2019", "Modificato da "),
-        ("D.Lgs 75/2020", "Modificato da "),
-        ("L. 137/2023", "Modificato da ")
-    ]
-    for legge, label in modifiche:
-        st.markdown(f"- <a href='#' style='color: #007aff; text-decoration: none;'>{label}{legge}</a>", unsafe_allow_html=True)
+# Visualizza risultati
+if df_filtered.empty:
+    st.warning("Nessun reato trovato.")
+else:
+    for _, row in df_filtered.iterrows():
+        with st.expander(f"{row['Art. Cod. Penale']} – {row['Reato']}"):
+            st.markdown(f"<div style='font-style: italic; font-size: 18px; line-height: 1.6; color: #333;'>{row['Testo']}</div>", unsafe_allow_html=True)
+            st.markdown("💰 **Sanzioni:**")
+            st.markdown(f"- Pecuniaria: {row['Sanzione Pecuniaria']}")
+            st.markdown(f"- Interdittiva: {row['Sanzione Interdittiva']}")
+            st.markdown("📜 **Modifiche storiche:**")
+            st.markdown(f"{row['Modifiche storiche']}")
+            st.markdown("🧠 **Spiegazione semplificata:**")
+            st.markdown(f"{row['Spiegazione semplificata']}")
+            st.markdown("📌 **Esempio applicativo:**")
+            st.markdown(f"{row['Esempi applicativi']}")
 
-    # Esportazione (simulazione)
-    if st.button("📥 Esporta in formato Excel"):
-        data = {
-            "Articolo": ["Art. 316-bis c.p."],
-            "Testo": [testo_reato],
-            "Sanzioni": ["Pecuniaria e Interdittiva"],
-            "Modifiche": [", ".join([x[0] for x in modifiche])]
-        }
-        df = pd.DataFrame(data)
-        export_path = "/mnt/data/316bis_esportazione.xlsx"
-        df.to_excel(export_path, index=False)
-        st.success("✅ File generato!")
-        st.markdown(f"[📂 Scarica il file Excel]({export_path})")
+    # Bottone per esportare tutto il filtrato in PDF
+    if st.button("📥 Esporta i risultati in PDF"):
+        def clean_text(txt):
+            return txt.encode('ascii', 'ignore').decode('ascii')
 
-# === ALTRE PAGINE (placeholder) ===
-elif page == "🧩 Esplora reati":
-    st.info("🔍 Sezione Esplora reati in aggiornamento Apple-style...")
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
 
-elif page == "📜 Modifiche storiche art. 316-bis":
-    st.info("🕰 Integrazione modifiche storiche in corso...")
+        for _, row in df_filtered.iterrows():
+            pdf.set_font("Arial", style='B', size=14)
+            pdf.cell(200, 10, txt=clean_text(f"{row['Art. Cod. Penale']} – {row['Reato']}"), ln=True)
+            pdf.set_font("Arial", style='', size=12)
+            pdf.multi_cell(0, 10, txt=clean_text(f"Testo:
+{row['Testo']}"))
+            pdf.multi_cell(0, 10, txt=clean_text(f"Sanzione Pecuniaria: {row['Sanzione Pecuniaria']}"))
+            pdf.multi_cell(0, 10, txt=clean_text(f"Sanzione Interdittiva: {row['Sanzione Interdittiva']}"))
+            pdf.multi_cell(0, 10, txt=clean_text(f"Modifiche storiche: {row['Modifiche storiche']}"))
+            pdf.multi_cell(0, 10, txt=clean_text(f"Spiegazione: {row['Spiegazione semplificata']}"))
+            pdf.multi_cell(0, 10, txt=clean_text(f"Esempio: {row['Esempi applicativi']}"))
+            pdf.ln(5)
+
+        export_path = "/mnt/data/reati_filtrati_export.pdf"
+        pdf.output(export_path)
+        st.success("✅ PDF generato!")
+        st.markdown(f"[📂 Scarica il PDF]({export_path})")
