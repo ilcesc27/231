@@ -1,29 +1,23 @@
 
+
 import streamlit as st
 import pandas as pd
 from fpdf import FPDF
-import difflib
 
 st.set_page_config(page_title="231 Navigator", layout="wide")
 
 @st.cache_data
 def load_data():
-    return pd.read_excel("catalogo_reati_231_completo_demo.xlsx")
+    return pd.read_excel("catalogo_reati_231_art24_25_COMPLETO.xlsx")
 
 df = load_data()
 
 famiglia_color_map = {
-    f: color for f, color in zip(df["Famiglia"].unique(), [
-        "#007aff", "#34c759", "#ff3b30", "#af52de", "#5ac8fa",
-        "#ffcc00", "#ff9500", "#8e8e93", "#5856d6", "#d63384",
-        "#00b894", "#e84393", "#6c5ce7", "#fdcb6e", "#fab1a0",
-        "#0984e3", "#e17055", "#dfe6e9", "#636e72", "#a29bfe",
-        "#ffeaa7", "#b2bec3", "#81ecec"
-    ])
+    "A. REATI CONTRO LA PUBBLICA AMMINISTRAZIONE": "#d6eaff"
 }
 
 st.title("📘 231 Navigator")
-st.markdown("Consulta reati presupposto, modifiche normative, sanzioni e versioni storiche — in stile Apple 🍎")
+st.markdown("Consulta i reati ex art. 24 e 25 del D.Lgs. 231/2001 — con testi aggiornati, spiegazioni ed esempi.")
 
 st.sidebar.title("🔍 Filtri")
 query = st.sidebar.text_input("Cerca reato o articolo...").lower()
@@ -40,9 +34,9 @@ if df_filtered.empty:
     st.warning("Nessun reato trovato.")
 else:
     for _, row in df_filtered.iterrows():
-        colore_famiglia = famiglia_color_map.get(row["Famiglia"], "#f0f0f0")
-        st.markdown(f"<div style='background-color: {colore_famiglia}20; padding: 1rem; border-left: 6px solid {colore_famiglia}; border-radius: 0.5rem; margin-bottom: 1rem;'>"
-                    f"<strong style='font-size: 1.1rem; color: {colore_famiglia};'>📂 Famiglia: {row['Famiglia']}</strong></div>",
+        colore_famiglia = famiglia_color_map.get(row["Famiglia"], "#e8f0fe")
+        st.markdown(f"<div style='background-color: {colore_famiglia}; padding: 1rem; border-left: 4px solid #888; border-radius: 0.5rem; margin-bottom: 1rem;'>"
+                    f"<strong style='font-size: 1.1rem; color: #333;'>📂 Famiglia: {row['Famiglia']}</strong></div>",
                     unsafe_allow_html=True)
 
         with st.expander(f"{row['Art. Cod. Penale']} – {row['Reato']}"):
@@ -85,7 +79,7 @@ else:
             pdf.multi_cell(0, 10, txt=clean_text("Esempio: " + row["Esempi applicativi"]))
             pdf.ln(5)
 
-        export_path = "/mnt/data/reati_filtrati_export.pdf"
+        export_path = "/mnt/data/reati_art24_25_export.pdf"
         pdf.output(export_path)
         st.success("✅ PDF generato!")
         st.markdown(f"[📂 Scarica il PDF]({export_path})")
