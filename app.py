@@ -1,88 +1,55 @@
 
 import streamlit as st
 import pandas as pd
-import difflib
 
-st.set_page_config(page_title="231 Navigator", layout="centered")
+st.set_page_config(page_title="Art. 316-bis – Apple Style", layout="centered")
 
-@st.cache_data
-def load_dati_reati():
-    return pd.read_excel("catalogo_reati_con_tutte_famiglie.xlsx", sheet_name="Reati")
+# Icone: da sostituire con immagini locali reali nella cartella /images/
+ICON_TESTO = "📄"
+ICON_SANZIONI = "💰"
+ICON_STORICO = "📜"
 
-@st.cache_data
-def load_storico():
-    return pd.read_excel("storico_316bis.xlsx")
+# Testo formattato del reato
+testo_reato = """
+Chiunque, estraneo alla pubblica Amministrazione, avendo ottenuto dallo Stato o da altro ente pubblico o dalle Comunità europee contributi, finanziamenti, mutui agevolati o altre erogazioni dello stesso tipo, comunque denominate, destinati alla realizzazione di una o più finalità, non li destina alle finalità previste, è punito con la reclusione da sei mesi a quattro anni.
+"""
 
-df_reati = load_dati_reati()
-df_storico = load_storico()
+# HTML per il testo reato (corsivo + spacing Apple-style)
+testo_html = f"""
+<div style='font-style: italic; font-size: 18px; line-height: 1.6; color: #333; margin-bottom: 20px;'>
+{testo_reato}
+</div>
+"""
 
-st.markdown("# 📘 231 Navigator")
+# Sanzioni dettagliate
+sanzioni = [
+    "Pecuniaria: da 100 a 500 quote; nei casi di rilevante profitto o danni di particolare gravità da 200 a 600 quote.",
+    "Interdittiva: divieto di contrattare con la pubblica amministrazione; esclusione da agevolazioni, finanziamenti, contributi o sussidi ed eventuale revoca di quelli già concessi; divieto di pubblicizzare beni e servizi; da tre mesi a due anni."
+]
 
-page = st.radio("Scegli cosa esplorare", ["🏠 Home", "🧩 Esplora reati", "📜 Modifiche storiche art. 316-bis"], horizontal=True)
+# Modifiche storiche
+modifiche = [
+    ("L. 86/1990", "Introdotto con "),
+    ("L. 181/1992", "Modificato da "),
+    ("L. 3/2019", "Modificato da "),
+    ("D.Lgs 75/2020", "Modificato da "),
+    ("L. 137/2023", "Modificato da ")
+]
 
-if page == "🏠 Home":
-    st.markdown("Benvenuto in una nuova esperienza di compliance. Scopri, esplora e resta aggiornato sul D.Lgs. 231/2001 in stile Apple.")
-    st.markdown("### Cosa puoi fare:")
-    st.markdown("- 🧩 Naviga le famiglie di reato")
-    st.markdown("- 📜 Consulta le modifiche normative")
-    st.markdown("- 🧾 Prepara verbali e documentazione OdV")
+# Layout
+st.markdown("<h1 style='font-size: 36px;'>Art. 316-bis c.p. – Malversazione di erogazioni pubbliche</h1>", unsafe_allow_html=True)
 
-elif page == "🧩 Esplora reati":
-    famiglie = sorted(df_reati["Famiglia"].unique())
-    scelta = st.selectbox("🔍 Seleziona una Famiglia", famiglie)
-    subset = df_reati[df_reati["Famiglia"] == scelta]
+st.markdown(f"<h3 style='margin-top: 20px;'>{ICON_TESTO} Testo vigente:</h3>", unsafe_allow_html=True)
+st.markdown(testo_html, unsafe_allow_html=True)
 
-    if subset.empty:
-        st.warning("⛔ Nessun reato ancora caricato per questa famiglia.")
-    else:
-        for _, row in subset.iterrows():
-            st.markdown(f"## {row['Art. Cod. Penale']} – {row['Reato']}")
-            st.markdown("📄 **Testo vigente:**")
-            st.markdown(row["Testo"])
-            st.markdown("💰 **Sanzioni:**")
-            st.markdown(f"- Pecuniaria: {row['Sanzione Pecuniaria']}")
-            st.markdown(f"- Interdittiva: {row['Sanzione Interdittiva']}")
-            st.markdown("📜 **Modifiche normative storiche:**")
-            st.markdown(row["Modifiche storiche"])
+st.markdown(f"<h3 style='margin-top: 30px;'>{ICON_SANZIONI} Sanzioni:</h3>", unsafe_allow_html=True)
+for s in sanzioni:
+    st.markdown(f"- {s}")
 
-            # Visualizzazione diretta versioni storiche con toggle
-            if "316-bis" in row["Art. Cod. Penale"]:
-                st.markdown("### 📚 Versioni precedenti disponibili")
-                if st.toggle("📂 Mostra versioni storiche", key="toggle_" + row["Art. Cod. Penale"]):
-                    versioni = df_storico[df_storico["Modifica"] != "Versione attuale"]
-                    opzioni = versioni["Data"].tolist()
-                    data_scelta = st.selectbox("📅 Seleziona una versione", opzioni, key="select_" + row["Art. Cod. Penale"])
-                    versione_storica = versioni[versioni["Data"] == data_scelta].iloc[0]["Testo"]
-                    st.markdown("🧾 **Testo della versione selezionata:**")
-                    st.markdown(versione_storica)
+st.markdown(f"<h3 style='margin-top: 30px;'>{ICON_STORICO} Modifiche normative storiche:</h3>", unsafe_allow_html=True)
+for legge, label in modifiche:
+    link_legge = f"<a href='#' style='color: #007aff; text-decoration: none;'>{label}{legge}</a>"
+    st.markdown(f"- {link_legge}", unsafe_allow_html=True)
 
-                    if st.toggle("🔁 Confronta con la versione attuale", key="diff_" + row["Art. Cod. Penale"]):
-                        attuale = df_storico[df_storico["Modifica"] == "Versione attuale"].iloc[0]["Testo"]
-                        differenze = difflib.unified_diff(
-                            versione_storica.split(),
-                            attuale.split(),
-                            fromfile=f"Versione {data_scelta}",
-                            tofile="Attuale",
-                            lineterm=""
-                        )
-                        st.code("\n".join(differenze), language="diff")
-
-elif page == "📜 Modifiche storiche art. 316-bis":
-    st.subheader("📜 Storico normativo – Art. 316-bis c.p.")
-    versione_attuale = df_storico[df_storico["Modifica"] == "Versione attuale"].iloc[0]["Testo"]
-
-    for _, row in df_storico.iterrows():
-        if row["Modifica"] == "Versione attuale":
-            continue
-        with st.expander(f"{row['Modifica']} ({row['Data']})"):
-            st.markdown("**Testo di allora:**")
-            st.markdown(row["Testo"])
-            if st.toggle("🔍 Mostra confronto con versione attuale", key="main_diff_" + row["Data"]):
-                differenze = difflib.unified_diff(
-                    row["Testo"].split(),
-                    versione_attuale.split(),
-                    fromfile="storico",
-                    tofile="attuale",
-                    lineterm=""
-                )
-                st.code("\n".join(differenze), language="diff")
+st.markdown("<br><hr style='margin-top: 40px;'><br>", unsafe_allow_html=True)
+st.caption("💡 Tocca una modifica per consultare la versione storica. Prossimamente: link diretti ai testi PDF e timeline animata.")
