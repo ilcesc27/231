@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import difflib
@@ -14,27 +15,6 @@ def load_storico():
 
 df_reati = load_dati_reati()
 df_storico = load_storico()
-
-st.markdown("""
-<style>
-h1 {
-    font-size: 48px;
-    font-weight: 700;
-    text-align: center;
-    margin-top: 1rem;
-}
-.big-button {
-    display: flex;
-    justify-content: center;
-    margin-top: 2rem;
-}
-button.css-1x8cf1d.edgvbvh3 {
-    font-size: 22px;
-    padding: 1rem 2rem;
-    border-radius: 12px;
-}
-</style>
-""", unsafe_allow_html=True)
 
 st.markdown("# 📘 231 Navigator")
 
@@ -64,6 +44,26 @@ elif page == "🧩 Esplora reati":
                 st.markdown(f"- Interdittiva: {row['Sanzione Interdittiva']}")
                 st.markdown("📜 **Modifiche normative storiche:**")
                 st.markdown(row["Modifiche storiche"])
+
+                if "316-bis" in row["Art. Cod. Penale"]:
+                    versioni = df_storico[df_storico["Modifica"] != "Versione attuale"]
+                    opzioni = versioni["Data"].tolist()
+                    with st.expander("📚 Versioni precedenti disponibili"):
+                        data_scelta = st.selectbox("📅 Seleziona una versione storica", opzioni, key=row["Art. Cod. Penale"])
+                        versione_storica = versioni[versioni["Data"] == data_scelta].iloc[0]["Testo"]
+                        st.markdown("🧾 **Testo della versione selezionata:**")
+                        st.markdown(versione_storica)
+
+                        if st.toggle("🔁 Confronta con la versione attuale", key=row["Art. Cod. Penale"] + "_diff"):
+                            attuale = df_storico[df_storico["Modifica"] == "Versione attuale"].iloc[0]["Testo"]
+                            differenze = difflib.unified_diff(
+                                versione_storica.split(),
+                                attuale.split(),
+                                fromfile=f"Versione {data_scelta}",
+                                tofile="Attuale",
+                                lineterm=""
+                            )
+                            st.code("\n".join(differenze), language="diff")
 
 elif page == "📜 Modifiche storiche art. 316-bis":
     st.subheader("📜 Storico normativo – Art. 316-bis c.p.")
