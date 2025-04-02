@@ -70,13 +70,13 @@ else:
             pdf.set_font("Arial", style='B', size=14)
             pdf.cell(200, 10, txt=clean_text(f"{row['Art. Cod. Penale']} – {row['Reato']}"), ln=True)
             pdf.set_font("Arial", style='', size=12)
-            pdf.multi_cell(0, 10, txt=clean_text(f"Testo:
-{row['Testo']}"))
-            pdf.multi_cell(0, 10, txt=clean_text(f"Sanzione Pecuniaria: {row['Sanzione Pecuniaria']}"))
-            pdf.multi_cell(0, 10, txt=clean_text(f"Sanzione Interdittiva: {row['Sanzione Interdittiva']}"))
-            pdf.multi_cell(0, 10, txt=clean_text(f"Modifiche storiche: {row['Modifiche storiche']}"))
-            pdf.multi_cell(0, 10, txt=clean_text(f"Spiegazione: {row['Spiegazione semplificata']}"))
-            pdf.multi_cell(0, 10, txt=clean_text(f"Esempio: {row['Esempi applicativi']}"))
+            pdf.multi_cell(0, 10, txt="Testo:
+" + clean_text(row["Testo"]))
+            pdf.multi_cell(0, 10, txt="Sanzione Pecuniaria: " + clean_text(row["Sanzione Pecuniaria"]))
+            pdf.multi_cell(0, 10, txt="Sanzione Interdittiva: " + clean_text(row["Sanzione Interdittiva"]))
+            pdf.multi_cell(0, 10, txt="Modifiche storiche: " + clean_text(row["Modifiche storiche"]))
+            pdf.multi_cell(0, 10, txt="Spiegazione: " + clean_text(row["Spiegazione semplificata"]))
+            pdf.multi_cell(0, 10, txt="Esempio: " + clean_text(row["Esempi applicativi"]))
             pdf.ln(5)
 
         export_path = "/mnt/data/reati_filtrati_export.pdf"
