@@ -36,34 +36,36 @@ elif page == "🧩 Esplora reati":
         st.warning("⛔ Nessun reato ancora caricato per questa famiglia.")
     else:
         for _, row in subset.iterrows():
-            with st.expander(f"{row['Art. Cod. Penale']} – {row['Reato']}"):
-                st.markdown("📄 **Testo vigente:**")
-                st.markdown(row["Testo"])
-                st.markdown("💰 **Sanzioni:**")
-                st.markdown(f"- Pecuniaria: {row['Sanzione Pecuniaria']}")
-                st.markdown(f"- Interdittiva: {row['Sanzione Interdittiva']}")
-                st.markdown("📜 **Modifiche normative storiche:**")
-                st.markdown(row["Modifiche storiche"])
+            st.markdown(f"## {row['Art. Cod. Penale']} – {row['Reato']}")
+            st.markdown("📄 **Testo vigente:**")
+            st.markdown(row["Testo"])
+            st.markdown("💰 **Sanzioni:**")
+            st.markdown(f"- Pecuniaria: {row['Sanzione Pecuniaria']}")
+            st.markdown(f"- Interdittiva: {row['Sanzione Interdittiva']}")
+            st.markdown("📜 **Modifiche normative storiche:**")
+            st.markdown(row["Modifiche storiche"])
 
-                if "316-bis" in row["Art. Cod. Penale"]:
+            # Visualizzazione diretta versioni storiche con toggle
+            if "316-bis" in row["Art. Cod. Penale"]:
+                st.markdown("### 📚 Versioni precedenti disponibili")
+                if st.toggle("📂 Mostra versioni storiche", key="toggle_" + row["Art. Cod. Penale"]):
                     versioni = df_storico[df_storico["Modifica"] != "Versione attuale"]
                     opzioni = versioni["Data"].tolist()
-                    with st.expander("📚 Versioni precedenti disponibili"):
-                        data_scelta = st.selectbox("📅 Seleziona una versione storica", opzioni, key=row["Art. Cod. Penale"])
-                        versione_storica = versioni[versioni["Data"] == data_scelta].iloc[0]["Testo"]
-                        st.markdown("🧾 **Testo della versione selezionata:**")
-                        st.markdown(versione_storica)
+                    data_scelta = st.selectbox("📅 Seleziona una versione", opzioni, key="select_" + row["Art. Cod. Penale"])
+                    versione_storica = versioni[versioni["Data"] == data_scelta].iloc[0]["Testo"]
+                    st.markdown("🧾 **Testo della versione selezionata:**")
+                    st.markdown(versione_storica)
 
-                        if st.toggle("🔁 Confronta con la versione attuale", key=row["Art. Cod. Penale"] + "_diff"):
-                            attuale = df_storico[df_storico["Modifica"] == "Versione attuale"].iloc[0]["Testo"]
-                            differenze = difflib.unified_diff(
-                                versione_storica.split(),
-                                attuale.split(),
-                                fromfile=f"Versione {data_scelta}",
-                                tofile="Attuale",
-                                lineterm=""
-                            )
-                            st.code("\n".join(differenze), language="diff")
+                    if st.toggle("🔁 Confronta con la versione attuale", key="diff_" + row["Art. Cod. Penale"]):
+                        attuale = df_storico[df_storico["Modifica"] == "Versione attuale"].iloc[0]["Testo"]
+                        differenze = difflib.unified_diff(
+                            versione_storica.split(),
+                            attuale.split(),
+                            fromfile=f"Versione {data_scelta}",
+                            tofile="Attuale",
+                            lineterm=""
+                        )
+                        st.code("\n".join(differenze), language="diff")
 
 elif page == "📜 Modifiche storiche art. 316-bis":
     st.subheader("📜 Storico normativo – Art. 316-bis c.p.")
@@ -75,7 +77,7 @@ elif page == "📜 Modifiche storiche art. 316-bis":
         with st.expander(f"{row['Modifica']} ({row['Data']})"):
             st.markdown("**Testo di allora:**")
             st.markdown(row["Testo"])
-            if st.toggle("🔍 Mostra confronto con versione attuale", key=row["Data"]):
+            if st.toggle("🔍 Mostra confronto con versione attuale", key="main_diff_" + row["Data"]):
                 differenze = difflib.unified_diff(
                     row["Testo"].split(),
                     versione_attuale.split(),
