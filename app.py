@@ -8,34 +8,33 @@ st.set_page_config(page_title="231 Navigator", layout="wide")
 
 @st.cache_data
 def load_data():
-    return pd.read_excel("catalogo_reati_231_unificato.xlsx")
+    return pd.read_excel("catalogo_reati_231_completo_demo.xlsx")
 
 df = load_data()
 
-# Colori associati a ciascuna famiglia
 famiglia_color_map = {
-    "A. REATI CONTRO LA PUBBLICA AMMINISTRAZIONE": "#007aff",
-    "B. REATI INFORMATICI E TRATTAMENTO ILLECITO DEI DATI": "#34c759",
-    "C. DELITTI DI CRIMINALITÀ ORGANIZZATA": "#ff3b30",
-    "D. REATI DI FALSITÀ IN MONETE...": "#af52de"
-    # aggiungibili fino a W
+    f: color for f, color in zip(df["Famiglia"].unique(), [
+        "#007aff", "#34c759", "#ff3b30", "#af52de", "#5ac8fa",
+        "#ffcc00", "#ff9500", "#8e8e93", "#5856d6", "#d63384",
+        "#00b894", "#e84393", "#6c5ce7", "#fdcb6e", "#fab1a0",
+        "#0984e3", "#e17055", "#dfe6e9", "#636e72", "#a29bfe",
+        "#ffeaa7", "#b2bec3", "#81ecec"
+    ])
 }
 
 st.title("📘 231 Navigator")
 st.markdown("Consulta reati presupposto, modifiche normative, sanzioni e versioni storiche — in stile Apple 🍎")
 
-# Sidebar per ricerca
 st.sidebar.title("🔍 Filtri")
 query = st.sidebar.text_input("Cerca reato o articolo...").lower()
 famiglie = st.sidebar.multiselect("Filtra per famiglia", df["Famiglia"].unique(), default=list(df["Famiglia"].unique()))
-modifiche = st.sidebar.text_input("Filtra per anno o legge (es. 2020, L. 137/2023)").lower()
+anno = st.sidebar.text_input("Filtra per anno o legge (es. 2020, L. 137/2023)").lower()
 
-# Filtro dati
 df_filtered = df[df["Famiglia"].isin(famiglie)]
 if query:
     df_filtered = df_filtered[df_filtered["Reato"].str.lower().str.contains(query) | df_filtered["Art. Cod. Penale"].str.lower().str.contains(query)]
-if modifiche:
-    df_filtered = df_filtered[df_filtered["Modifiche storiche"].str.lower().str.contains(modifiche)]
+if anno:
+    df_filtered = df_filtered[df_filtered["Modifiche storiche"].str.lower().str.contains(anno)]
 
 if df_filtered.empty:
     st.warning("Nessun reato trovato.")
@@ -47,13 +46,14 @@ else:
                     unsafe_allow_html=True)
 
         with st.expander(f"{row['Art. Cod. Penale']} – {row['Reato']}"):
-            st.markdown(f"<div style='font-style: italic; font-size: 18px; line-height: 1.6; color: #333;'>{row['Testo']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size: 22px; font-weight: 700; margin-bottom: 0.2rem;'>{row['Art. Cod. Penale']} – {row['Reato']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-style: italic; font-size: 17px; line-height: 1.6; color: #333; margin-bottom: 1rem;'>{row['Testo']}</div>", unsafe_allow_html=True)
 
             st.markdown("💰 **Sanzioni:**")
-            st.markdown(f"- Pecuniaria: {row['Sanzione Pecuniaria']}")
-            st.markdown(f"- Interdittiva: {row['Sanzione Interdittiva']}")
+            st.markdown(f"- **Pecuniaria**: {row['Sanzione Pecuniaria']}")
+            st.markdown(f"- **Interdittiva**: {row['Sanzione Interdittiva']}")
 
-            st.markdown("📜 **Modifiche storiche:**")
+            st.markdown("📜 **Modifiche storiche della norma:**")
             st.markdown(f"{row['Modifiche storiche']}")
 
             st.markdown("🧠 **Spiegazione semplificata:**")
@@ -62,17 +62,8 @@ else:
             st.markdown("📌 **Esempio applicativo:**")
             st.markdown(f"{row['Esempi applicativi']}")
 
-            # Placeholder per confronto storico - visual diff
-            if "versione_passata" in row and pd.notnull(row["versione_passata"]):
-                old = row["versione_passata"].split()
-                new = row["Testo"].split()
-                differenze = difflib.HtmlDiff().make_table(old, new, "Versione storica", "Versione attuale", context=True, numlines=2)
-                st.markdown("🔁 **Confronto versione storica**")
-                st.components.v1.html(differenze, height=300, scrolling=True)
+            st.markdown("<hr style='border: 1px solid #e6e6e6; margin: 2rem 0;' />", unsafe_allow_html=True)
 
-        st.markdown("<hr style='margin-top: 2rem; margin-bottom: 2rem; border: 1px solid #e0e0e0;' />", unsafe_allow_html=True)
-
-    # PDF export
     if st.button("📥 Esporta in PDF"):
         def clean_text(txt):
             return txt.encode('ascii', 'ignore').decode('ascii')
