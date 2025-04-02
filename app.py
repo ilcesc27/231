@@ -7,29 +7,16 @@ st.set_page_config(page_title="231 Navigator", layout="wide")
 
 @st.cache_data
 def load_data():
-    df_316 = pd.DataFrame({
-        "Famiglia": ["A. REATI CONTRO LA PUBBLICA AMMINISTRAZIONE"],
-        "Articolo 231": ["Art. 24 D.Lgs. 231/2001"],
-        "Art. Cod. Penale": ["Art. 316-bis c.p."],
-        "Reato": ["Malversazione di erogazioni pubbliche"],
-        "Testo": ["Chiunque, estraneo alla pubblica Amministrazione, avendo ottenuto dallo Stato o da altro ente pubblico..."],
-        "Sanzione Pecuniaria": ["da 100 a 500 quote"],
-        "Sanzione Interdittiva": ["divieto di contrattare con la PA; esclusione da agevolazioni; ecc."],
-        "Modifiche storiche": ["L. 86/1990, L. 181/1992, L. 3/2019, D.Lgs 75/2020, L. 137/2023"],
-        "Esempi applicativi": ["Utilizzo illecito di fondi pubblici per fini privati"],
-        "Spiegazione semplificata": ["Usare fondi pubblici per fini diversi da quelli autorizzati"]
-    })
-    df_615 = pd.read_excel("reato_24bis_accesso_abusivo.xlsx")
-    return pd.concat([df_316, df_615], ignore_index=True)
+    return pd.read_excel("catalogo_reati_231_unificato.xlsx")
 
 df = load_data()
 
+# Sidebar per filtro e ricerca
 st.sidebar.title("🔍 Filtri")
 query = st.sidebar.text_input("Cerca reato o articolo...").lower()
 famiglie = st.sidebar.multiselect("Filtra per famiglia", df["Famiglia"].unique(), default=list(df["Famiglia"].unique()))
 modifiche = st.sidebar.text_input("Filtra per anno o legge (es. 2020, 2024, L. 3/2019)").lower()
 
-# Applica i filtri
 df_filtered = df[df["Famiglia"].isin(famiglie)]
 if query:
     df_filtered = df_filtered[df_filtered["Reato"].str.lower().str.contains(query) | df_filtered["Art. Cod. Penale"].str.lower().str.contains(query)]
@@ -39,7 +26,6 @@ if modifiche:
 st.title("📘 231 Navigator")
 st.markdown("Consulta reati presupposto, modifiche normative, sanzioni e versioni storiche. Ora con esportazione PDF!")
 
-# Visualizza risultati
 if df_filtered.empty:
     st.warning("Nessun reato trovato.")
 else:
@@ -56,7 +42,7 @@ else:
             st.markdown("📌 **Esempio applicativo:**")
             st.markdown(f"{row['Esempi applicativi']}")
 
-    # Bottone per esportare tutto il filtrato in PDF
+    # Esportazione PDF
     if st.button("📥 Esporta i risultati in PDF"):
         def clean_text(txt):
             return txt.encode('ascii', 'ignore').decode('ascii')
@@ -70,7 +56,7 @@ else:
             pdf.set_font("Arial", style='B', size=14)
             pdf.cell(200, 10, txt=clean_text(f"{row['Art. Cod. Penale']} – {row['Reato']}"), ln=True)
             pdf.set_font("Arial", style='', size=12)
-            pdf.multi_cell(0, 10, txt=clean_text("Testo:\n" + row["Testo"]))
+            pdf.multi_cell(0, 10, txt=clean_text("Testo: " + row["Testo"]))
             pdf.multi_cell(0, 10, txt=clean_text("Sanzione Pecuniaria: " + row["Sanzione Pecuniaria"]))
             pdf.multi_cell(0, 10, txt=clean_text("Sanzione Interdittiva: " + row["Sanzione Interdittiva"]))
             pdf.multi_cell(0, 10, txt=clean_text("Modifiche storiche: " + row["Modifiche storiche"]))
